@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nebius Group N.V. (NBIS) — Global AI Data Center & Cloud Region Atlas (November 2026)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #0b1120; color: #f8fafc; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  header { background: #0f172a; border-bottom: 2px solid #d4af37; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; z-index: 1000; }
+  .title-block h1 { font-size: 17px; font-weight: 700; color: #ffffff; letter-spacing: 0.2px; }
+  .title-block p { font-size: 12px; color: #cbd5e1; margin-top: 2px; }
+  .kpi-strip { display: flex; gap: 12px; flex-wrap: wrap; }
+  .kpi { background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 6px 12px; text-align: right; }
+  .kpi .lbl { font-size: 10px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.5px; }
+  .kpi .val { font-size: 14px; font-weight: 700; color: #f8fafc; }
+  .kpi .val.gold { color: #facc15; }
+  .kpi .val.green { color: #4ade80; }
+  .kpi .val.blue { color: #38bdf8; }
+  .main-wrap { display: flex; flex: 1; overflow: hidden; }
+  #sidebar { width: 410px; background: #0f172a; border-right: 1px solid #1e293b; display: flex; flex-direction: column; overflow: hidden; }
+  .filter-bar { padding: 10px 14px; background: #1e293b; border-bottom: 1px solid #334155; display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter-btn { background: #0f172a; color: #cbd5e1; border: 1px solid #475569; border-radius: 4px; padding: 5px 9px; font-size: 11px; cursor: pointer; font-weight: 600; }
+  .filter-btn.active { background: #d4af37; color: #0f172a; border-color: #d4af37; }
+  .search-box { padding: 8px 14px; background: #0f172a; border-bottom: 1px solid #1e293b; }
+  .search-box input { width: 100%; padding: 7px 10px; border-radius: 4px; border: 1px solid #334155; background: #1e293b; color: #fff; font-size: 12px; }
+  #site-list { flex: 1; overflow-y: auto; padding: 8px 10px; }
+  .site-card { background: #1e293b; border: 1px solid #334155; border-left: 4px solid #38bdf8; border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; }
+  .site-card:hover { background: #26354d; transform: translateX(2px); }
+  .site-card.status-Operational { border-left-color: #22c55e; }
+  .site-card.status-Under { border-left-color: #f59e0b; }
+  .site-card.status-Contracted { border-left-color: #a855f7; }
+  .site-card .sc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .site-card .sc-name { font-size: 12.5px; font-weight: 700; color: #f8fafc; line-height: 1.3; }
+  .site-card .sc-mw { font-size: 12px; font-weight: 700; color: #facc15; white-space: nowrap; }
+  .site-card .sc-meta { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+  .site-card .sc-badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 700; margin-top: 5px; }
+  .badge-Operational { background: rgba(34,197,94,0.2); color: #4ade80; border: 1px solid #22c55e; }
+  .badge-Under { background: rgba(245,158,11,0.2); color: #fbbf24; border: 1px solid #f59e0b; }
+  .badge-Contracted { background: rgba(168,85,247,0.2); color: #c084fc; border: 1px solid #a855f7; }
+  #map { flex: 1; height: 100%; background: #0b1120; }
+  .leaflet-popup-content-wrapper { background: #0f172a; color: #f8fafc; border: 1px solid #d4af37; border-radius: 8px; max-width: 430px; }
+  .leaflet-popup-tip { background: #0f172a; }
+  .pop-title { font-size: 14px; font-weight: 700; color: #facc15; margin-bottom: 6px; border-bottom: 1px solid #334155; padding-bottom: 5px; }
+  .pop-row { font-size: 11.5px; margin: 4px 0; line-height: 1.4; }
+  .pop-row strong { color: #93c5fd; }
+  .legend { background: rgba(15, 23, 42, 0.92); border: 1px solid #334155; border-radius: 6px; padding: 10px 12px; color: #f8fafc; font-size: 11.5px; line-height: 1.6; }
+  .legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+  @media (max-width: 900px) {
+    .main-wrap { flex-direction: column; }
+    #sidebar { width: 100%; height: 42%; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="title-block">
+    <h1>Nebius Group N.V. (NASDAQ: NBIS) — Global AI Factories & Cloud Region Atlas</h1>
+    <p>Oakcliff Capital Research · November 2026 · 22 Mapped Facilities Across US, Europe & Israel (Click any pin or card for power, cooling, GPU & regulatory dossier)</p>
+  </div>
+  <div class="kpi-strip">
+    <div class="kpi"><div class="lbl">Active / YE26 Connected</div><div class="val green">~170 MW YE25 → 0.8–1.0 GW YE26E</div></div>
+    <div class="kpi"><div class="lbl">Contracted Power Target</div><div class="val gold">&gt;3.5 GW (May '26) → 5.0 GW YE26E</div></div>
+    <div class="kpi"><div class="lbl">Mapped Site Envelope</div><div class="val blue">22 Sites · 4,080 MW</div></div>
+    <div class="kpi"><div class="lbl">Q2 '26 RPO / Uncommenced Leases</div><div class="val">$37.5B RPO / $12.1B Leases</div></div>
+  </div>
+</header>
+<div class="main-wrap">
+  <div id="sidebar">
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterSites('ALL', this)">All (22)</button>
+      <button class="filter-btn" onclick="filterSites('Operational', this)">Operational (10)</button>
+      <button class="filter-btn" onclick="filterSites('Under Construction', this)">Under Construction (10)</button>
+      <button class="filter-btn" onclick="filterSites('Contracted', this)">Contracted / Dev (2)</button>
+      <button class="filter-btn" onclick="filterSites('US', this)">US Only (8)</button>
+      <button class="filter-btn" onclick="filterSites('INTL', this)">Europe &amp; Israel (14)</button>
+    </div>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Search city, state, country, partner (DataOne, Bloom, Microsoft, Meta, PPL)..." oninput="renderList()"/>
+    </div>
+    <div id="site-list"></div>
+  </div>
+  <div id="map"></div>
+</div>
+<script>
+const GEOJSON_DATA = {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [-75.0054, 39.4648]}, "properties": {"id": 1, "name": "Vineland AI Factory (DataOne Build-to-Suit Campus \u2014 Microsoft Anchor) \u2014 Vineland, NJ", "city": "Vineland, Cumberland Co., NJ (Lincoln & Sheridan Ave.)", "region": "US \u2014 Northeast (PJM / Atlantic City Electric + Bloom Fuel Cells)", "lat": 39.4648, "lon": -75.0054, "status": "Operational", "category": "Build-to-Suit AI Factory (DataOne Landlord; 5-Yr $17.4B\u2013$19.4B Microsoft Contract; All Microsoft Tranches Delivered by Aug. 2026)", "mw": 300.0, "mw_unit": "MW Design Envelope (Up to 350 MW DataOne Max Across 14 Halls; 200 MW 2025\u20132026 Contracted Schedule; All Microsoft Tranches Delivered as of Aug. 2026)", "pue": "1.10\u20131.15 (Closed-Loop Liquid Cooling + Indoor Air Chillers)", "power_utility": "Behind-the-Meter Bloom Energy Solid Oxide Fuel Cells (~250 MW Guaranteed / ~328 MW Installed across 3 phases, 10-yr up to $2.6B contract) + Atlantic City Electric (5 MW Initial / ~49 MW Permanent Backup)", "cooling_water": "Closed-loop recirculating liquid cooling with indoor air chillers and on-site 6,750 sq ft water treatment plant", "hardware": "NVIDIA GB200 NVL72 & GB300 NVL72 (Blackwell / Blackwell Ultra) Dedicated to Microsoft ($17.4B base / $19.4B w/ options, 2025\u20132031)", "docket_gate": "Vineland Planning Board PBA-24-00022 (June 26, 2024) & Amended Plan PBA-26-00001 (Aug. 17, 2026). Aug. 6/10, 2026 City stop-work orders on unpermitted LNG/fuel-cell work; Sept. 22, 2026 NJDEP Order (EA ID PEA260001-75894) fined landlord DataOne $1,072,000 for installing 62 unpermitted 1,982 kW Caterpillar G3516H gas engines (~122.9 MW); Oct. 2026 Sustain SJ Clean Air Act notice of intent to sue.", "conf": "[HIGH \u2014 Nebius FY25 20-F, Sept. 8, 2025 6-K, Q1/Q2 2026 6-Ks & NJDEP Order PEA260001-75894]", "obs_date": "2026-11-09", "notes": "First Microsoft tranche delivered Nov. 2025, second Feb. 2026, and all remaining Microsoft tranches delivered by Aug. 2026 (Q2'26 Shareholder Letter p. 5). Permanent power transitions from temporary Cat gas engines to Bloom Energy SOFCs."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-94.3318, 39.0726]}, "properties": {"id": 2, "name": "Independence AI Factory (Eastgate Commerce Center \u2014 Owned Greenfield #1) \u2014 Independence, MO", "city": "Independence, Jackson Co., MO (250 Bly Rd. / Little Blue Pkwy. & MO-78)", "region": "US \u2014 Midwest (SPP / Independence Power & Light)", "lat": 39.0726, "lon": -94.3318, "status": "Under Construction", "category": "Owned Greenfield AI Factory (~398 Acres Acquired Dec. 5, 2025; Groundbreaking May 12, 2026; 4 Buildings Over 5\u20137 Yrs)", "mw": 1200.0, "mw_unit": "MW Planned Campus Envelope (800 MW Utility Supply Plan via IPL/IPP Starting w/ 200 MW Phase 1 + 400 MW Future On-Site Generation Option)", "pue": "1.10\u20131.14 (Closed-Loop Waterless Air-Assisted Liquid Cooling)", "power_utility": "Independence Power & Light (IPL) Municipal Utility + Independence Power Partners Station 1 at Blue Valley (267.5 MW Gross across 15 Gas Turbines; MO DNR Air Permit 072026-012 Issued July 31, 2026; Online Target June 2027) + SPP Bridge Capacity", "cooling_water": "Closed-loop cooling requiring <1% of municipal water supply (modeled after M\u00e4nts\u00e4l\u00e4 water-free heat-rejection architecture)", "hardware": "NVIDIA Vera Rubin NVL72 & GB300 NVL72 (Supports $12B Dedicated / Up to $27B Meta 5-Yr Agreement & Multi-Tenant Cloud)", "docket_gate": "Independence City Council Ord. 19759 (Dec. 1, 2025), Bridge Power Ords. 19774\u201319776 (Jan. 20, 2026, 7-0), Chapter 100 Tax Abatement Ord. 19791 (Mar. 2, 2026, 5-2), MO DNR Stormwater MORA29812 (Mar. 25, 2026), and MO DNR Air Permit 072026-012 (July 31, 2026). Operational ramp targeted in 2027.", "conf": "[HIGH \u2014 Nebius Q1/Q2 2026 6-Ks, MO DNR Permit 072026-012 & Independence Ordinances]", "obs_date": "2026-11-09", "notes": "Nebius's first owned US gigawatt-scale AI factory (~398 acres). Broke ground May 12, 2026; initial operations targeted for 2027."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-76.3112, 40.7614]}, "properties": {"id": 3, "name": "Highridge Business Park AI Factory (Butler Township \u2014 Owned Greenfield #2) \u2014 Schuylkill County, PA", "city": "Butler Township (Gordon / Frackville), Schuylkill Co., PA (I-81 & Gordon Mountain Rd.)", "region": "US \u2014 Mid-Atlantic (PJM / PPL Electric Utilities)", "lat": 40.7614, "lon": -76.3112, "status": "Under Construction", "category": "Owned Greenfield AI Factory (~358 Core Acres Acquired Apr. 2026 for $187.5M + Expansion Tract to ~600 Acres; 4\u20136 Buildings)", "mw": 1200.0, "mw_unit": "MW Planned Campus Envelope (260 MW Target Oct. 2027, 660 MW Jan. 2029, >1,000 MW Nov. 2029; PJM Queue PPL-2025-0008 Documents 290 MW in 2027 -> 600 MW in 2029)", "pue": "1.10\u20131.15 (Closed-Loop Air + Direct-to-Chip Liquid Cooling + 30-Min BESS)", "power_utility": "PPL Electric Utilities / PJM 230 kV Transmission (PJM Queue PPL-2025-0008 Gordon 230 kV Switchyard & 37-Mile Sunbury\u2013Frackville 230 kV Rebuild, ~$231.65M Transmission Upgrade) + On-Site 30-Minute BESS", "cooling_water": "Closed-loop liquid and air cooling with multiple storm-water retention basins", "hardware": "NVIDIA Vera Rubin NVL72 & Next-Gen Rubin Ultra Clusters (Phased Delivery Starting Oct. 2027)", "docket_gate": "PA DEP Chapter 102 Individual NPDES Permit PAD540030 issued June 2026 (Highridge DC Propco LLC); Butler Township Ord. 2026-2 (Aug. 31, 2026, passed 2-1) expanded Data Center Overlay to Phase 3 SEDCO parcels; Ord. 2026-3 lowered property-line noise limit from 75 dBA to 65 dBA and mandated Community Benefits Agreement negotiations during final land-development review (pending).", "conf": "[HIGH \u2014 Nebius Q1 2026 6-K, PA DEP PAD540030, PJM TEAC PPL-2025-0008 & Butler Twp. Ords. 2026-2/2026-3]", "obs_date": "2026-11-09", "notes": "Announced May 13, 2026 as Nebius's second owned 1.2 GW US AI factory. Core 358 acres acquired for $187.5M; zoning overlay cleared Aug. 31, 2026; final land-development plan and PJM >600 MW Phase 2 interconnection pending."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-86.8856, 33.4284]}, "properties": {"id": 4, "name": "Birmingham AI Factory (BHM01 \u2014 Oxmoor Valley Owned Campus) \u2014 Birmingham, AL", "city": "Birmingham, Jefferson Co., AL (201 & 260 Milan Pkwy., Oxmoor Valley)", "region": "US \u2014 Southeast (SERC / Alabama Power)", "lat": 33.4284, "lon": -86.8856, "status": "Under Construction", "category": "Owned Brownfield/Greenfield AI Factory (~75 Acres Acquired Sept. 2025 via Alabama ADC Holdings LLC; 2-Building Campus, Hoar Construction GC)", "mw": 300.0, "mw_unit": "MW Reported Project Scale (Initial Commissioning Targeted Q4 2026, Operations in 2027, Full Buildout Through 2028)", "pue": "1.12\u20131.16 (Closed-Loop Mechanical Air + Liquid Cooling; <1M Gal/Yr Water)", "power_utility": "Alabama Power (Southern Co.) Dedicated 230 kV to 34.5 kV Sand Ridge Substation at 260 Milan Pkwy. (Nebius-Funded Substation Permit BLD2026-00780 & High-Voltage Permit ELE2026-01902 Issued)", "cooling_water": "Sealed closed-loop cooling (<1M gallons/yr water vs. >3M gallons/yr at prior Regions Bank operations center) with 8\u201322 ft acoustic walls", "hardware": "NVIDIA GB300 NVL72 & Vera Rubin NVL72 Systems (2027 Operational Ramp)", "docket_gate": "ADEM Stormwater Permits ALR10C7R7 (Feb. 18 / June 26, 2026) & ALR10C8BV (July 23, 2026); City of Birmingham Foundation/Superstructure/Shell/Substation Permits (~$47M: BLD2026-00036, -00195, -00640, -00724, -00780, ELE2026-01902) & IDB Tax Abatement (May 29, 2026, 6-0). Exempted from Birmingham's March 2026 data-center moratorium; consolidated neighbor/Humane Society lawsuit challenging moratorium exemption and substation zoning set for March 8, 2027 hearing.", "conf": "[HIGH \u2014 Nebius FY25 20-F, Q1 2026 6-K, ADEM Permits ALR10C7R7/ALR10C8BV & Birmingham Building Permits]", "obs_date": "2026-11-09", "notes": "Owned 75-acre redevelopment of former Regions Bank center. Shell and 230 kV substation permits issued; fire-system permits submitted Oct.\u2013Nov. 2026; litigation hearing set for March 8, 2027."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-94.5794, 39.0934]}, "properties": {"id": 5, "name": "Kansas City Colocation Hub (Patmos \u2014 Public Region us-central1) \u2014 Kansas City, MO", "city": "Kansas City, Jackson Co., MO (1601 McGee St. \u2014 Former KC Star Press Building)", "region": "US \u2014 Midwest (SPP / Evergy)", "lat": 39.0934, "lon": -94.5794, "status": "Operational", "category": "Leased Colocation Hub (Patmos Hosting; Nebius First US Availability Zone `us-central1`, Launched April 2025)", "mw": 40.0, "mw_unit": "MW Potential Expansion Envelope (Initial 5 MW Live April 2025 -> Expanded July 2025; Patmos Describes 25 MW Retrofit Phase; Up to 40 MW / ~35k GPUs Max)", "pue": "1.15\u20131.22 (Direct-to-Chip Liquid + Air Cooling Retrofit)", "power_utility": "Evergy Metro Grid + Patmos Generator Hall Expansion (Permit CPBC-2026-00805 Issued Aug. 20, 2026)", "cooling_water": "Closed-loop liquid cooling retrofit inside former printing press hall", "hardware": "NVIDIA H200 NVLink, HGX B200 NVLink & RTX PRO 6000 (Public Cloud Region `us-central1`)", "docket_gate": "Kansas City Commercial Renovation Permits CPBC-2025-00057 (Jan. 21, 2025) & Generator Hall Permit CPBC-2026-00805 (Aug. 20, 2026). Fully operational.", "conf": "[HIGH \u2014 Nebius FY25 20-F, Q2/Q3 2025 6-Ks, Region Docs `us-central1` & KCMO Permit Records]", "obs_date": "2026-11-09", "notes": "Nebius's first US availability zone (`us-central1`), live since April 2025 and expanded with NVIDIA B200s in Q3 2025."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-92.9594, 44.9239]}, "properties": {"id": 6, "name": "Woodbury / Twin Cities Colocation Hub (Public Region us-north1) \u2014 Woodbury, MN", "city": "Woodbury, Washington Co., MN (Twin Cities Metro East)", "region": "US \u2014 Upper Midwest (MISO / Xcel Energy)", "lat": 44.9239, "lon": -92.9594, "status": "Operational", "category": "Leased Colocation Hub (Secured Feb. 2026; Live as Nebius Region `us-north1`)", "mw": 25.0, "mw_unit": "MW Estimated Tenant Allocation (Disclosed in FY25 20-F & Active in Nebius Region Docs as `us-north1` Serving NVIDIA B300 NVLink)", "pue": "1.12\u20131.18 (Cold-Climate Colocation)", "power_utility": "Xcel Energy (MISO North Grid)", "cooling_water": "High-efficiency liquid/air cooling for NVIDIA B300 Blackwell Ultra racks", "hardware": "NVIDIA B300 NVLink (Blackwell Ultra) & AMD EPYC Genoa Nodes (Region `us-north1`)", "docket_gate": "Contract secured Feb. 2026 (FY25 20-F p. 35); active in Nebius official documentation as region `us-north1`.", "conf": "[HIGH \u2014 Nebius FY25 20-F p. 35 & Official Region Documentation `us-north1`; LOW \u2014 MW Estimate]", "obs_date": "2026-11-09", "notes": "Listed in Nebius's official cloud region documentation (`us-north1`: Woodbury, Minnesota) with live NVIDIA B300 NVLink availability."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-81.9914, 34.8322]}, "properties": {"id": 7, "name": "Moore / Spartanburg AI Conversion (AIB Data Centers CLT1) \u2014 Moore, SC", "city": "Moore, Spartanburg Co., SC (389 Tyger River Industrial Dr.)", "region": "US \u2014 Southeast (SERC / Lockhart Power)", "lat": 34.8322, "lon": -81.9914, "status": "Under Construction", "category": "Contracted Colocation / Crypto-to-AI Redevelopment (AIB Data Centers 12-Yr Hosting Agreement w/ 2x5-Yr Options; 187,600 Sq Ft Hall Replacing 40 MW Bitcoin Site)", "mw": 50.0, "mw_unit": "MW Critical IT Contracted (Two 25 MW Halls; 65 MW Facility Cap / 65,000 kVA at 34.5 kV Executed Electricity Contract; Q4 2027 Delivery Target)", "pue": "1.15\u20131.20 (Closed-Loop AI Hall Conversion)", "power_utility": "Lockhart Power 15-Yr Electricity Agreement (Effective Oct. 1, 2026; 65,000 kVA at 34.5 kV on Existing Industrial Substation)", "cooling_water": "SJWD Water District + closed-loop cooling and acoustic/stream buffers across 16-acre parcel", "hardware": "Next-Generation NVIDIA GPU Clusters (2 x 25 MW Halls Targeted for Q4 2027 Delivery)", "docket_gate": "Spartanburg County enacted a 12-month data-center moratorium (Sept. 21 / Oct. 19, 2026, Ord. O-26-26) with an industrial-site exemption up to 65 MW IT. CLT1's 12-year Development Agreement (capped at 50 MW IT / 65 MW facility) passed 2nd reading Nov. 3, 2026 and is scheduled for 3rd/final reading Nov. 16, 2026 (Item XVII.U).", "conf": "[HIGH \u2014 AIB SEC Filings (Form 10-Q & Ex. 10.1/99.1) & Spartanburg County Nov. 3/16, 2026 Agenda Packet]", "obs_date": "2026-11-09", "notes": "12-year hosting agreement with AIB Data Centers converting a former 40 MW container Bitcoin site into a 187,600 sq ft, 50 MW IT (65 MW gross) AI facility for Nebius."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-97.5164, 35.4676]}, "properties": {"id": 8, "name": "Oklahoma City Colocation Deployment \u2014 Oklahoma City, OK", "city": "Oklahoma City, Oklahoma Co., OK", "region": "US \u2014 Plains (SPP / OG&E)", "lat": 35.4676, "lon": -97.5164, "status": "Contracted / In Development", "category": "Leased Colocation Site (Contract Secured Feb. 2026 per FY25 Form 20-F)", "mw": 25.0, "mw_unit": "MW Estimated Colocation Allocation (Disclosed in FY25 20-F p. 35 & Q1/Q2 2026 Shareholder Letters; Exact MW Undisclosed)", "pue": "1.15\u20131.20 (Colocation Standard)", "power_utility": "Oklahoma Gas & Electric (OG&E \u2014 SPP)", "cooling_water": "Third-party colocation cooling infrastructure", "hardware": "NVIDIA Blackwell / Vera Rubin GPU Clusters", "docket_gate": "Secured in February 2026 (FY25 Form 20-F p. 35); subject to Oklahoma Corporation Commission large-load tariff rules.", "conf": "[HIGH \u2014 Nebius FY25 20-F p. 35 for Location & Contract; LOW \u2014 MW Estimate]", "obs_date": "2026-11-09", "notes": "Disclosed in Nebius's FY2025 Form 20-F (p. 35) and Q1/Q2 2026 footprint maps as a US colocation site secured in February 2026."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [25.3182, 60.6331]}, "properties": {"id": 9, "name": "M\u00e4nts\u00e4l\u00e4 1 Flagship AI Factory (Owned Campus \u2014 Region eu-north1) \u2014 M\u00e4nts\u00e4l\u00e4, Finland", "city": "M\u00e4nts\u00e4l\u00e4, Uusimaa, Finland (60 km North of Helsinki)", "region": "Europe \u2014 Nordics (Fingrid / Nivos Energia)", "lat": 60.6331, "lon": 25.3182, "status": "Operational", "category": "Owned Greenfield Flagship Data Center (Tripled from 25 MW to 75 MW in March 2026; Public Cloud Region `eu-north1`)", "mw": 75.0, "mw_unit": "MW Operational Facility Capacity (Expanded from 25 MW to 75 MW in Q1 2026; Houses Up to 60,000 GPUs)", "pue": "1.10 (Water-Free Direct Air Cooling + Municipal District Heat Recovery)", "power_utility": "Fingrid / Nivos Energia (94% Low-Carbon Electricity; Reused ~20 GWh of Server Heat in 2025 Supplying ~65% of M\u00e4nts\u00e4l\u00e4 Municipal District Heating)", "cooling_water": "Proprietary water- and refrigerant-free direct air cooling (servers operate up to 40\u00b0C / 104\u00b0F) + closed-loop liquid cooling for GB300 NVL72 + municipal district heat recovery", "hardware": "NVIDIA GB300 NVL72, H200 NVLink, H100 NVLink & L40S (First European GB300 NVL72 Production Deployment; Region `eu-north1`)", "docket_gate": "Fully permitted and operational; 75 MW expansion completed March 2026.", "conf": "[HIGH \u2014 Nebius FY25 20-F pp. 34\u201335, July 10, 2025 Sustainability 6-K & March 31, 2026 Release]", "obs_date": "2026-11-09", "notes": "Nebius's original owned engineering flagship (~1.1 PUE, zero external water intake, supplies two-thirds of local municipal heating). Tripled to 75 MW in March 2026."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [25.331, 60.6415]}, "properties": {"id": 10, "name": "M\u00e4nts\u00e4l\u00e4 2 Expansion AI Factory (Second M\u00e4nts\u00e4l\u00e4 Facility) \u2014 M\u00e4nts\u00e4l\u00e4, Finland", "city": "M\u00e4nts\u00e4l\u00e4, Uusimaa, Finland", "region": "Europe \u2014 Nordics (Fingrid / Nivos Energia)", "lat": 60.6415, "lon": 25.331, "status": "Under Construction", "category": "Owned / Dedicated Expansion Data Center (Announced Aug. 2026; Separate 70 MW Facility Beside M\u00e4nts\u00e4l\u00e4 1)", "mw": 70.0, "mw_unit": "MW Planned Facility Capacity (Coming Online Starting 2027; Lifts Total M\u00e4nts\u00e4l\u00e4 Footprint to 145 MW)", "pue": "1.10 (Direct Air + Closed-Loop Liquid Cooling + Heat Recovery)", "power_utility": "Fingrid / Nivos Energia High-Voltage Grid Connection", "cooling_water": "Closed-loop liquid cooling + district heat recovery integration", "hardware": "NVIDIA GB300 NVL72 & Vera Rubin NVL72 Systems (2027 Ramp)", "docket_gate": "Announced August 2026 alongside Q2 2026 results; delivery scheduled from 2027.", "conf": "[HIGH \u2014 Nebius Q2 2026 Shareholder Letter p. 5 & Aug. 13, 2026 Announcement]", "obs_date": "2026-11-09", "notes": "Second M\u00e4nts\u00e4l\u00e4 facility (70 MW) announced in August 2026, distinct from both M\u00e4nts\u00e4l\u00e4 1 (75 MW) and Lappeenranta (310 MW)."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [28.1887, 61.0587]}, "properties": {"id": 11, "name": "Lappeenranta AI Factory (Owned 310 MW Campus w/ Polarnode) \u2014 Lappeenranta, Finland", "city": "Lappeenranta, South Karelia, Finland (~100-Acre Industrial Site)", "region": "Europe \u2014 Nordics (Fingrid 400 kV / Lappeenrannan Energia)", "lat": 61.0587, "lon": 28.1887, "status": "Under Construction", "category": "Owned Greenfield AI Factory (Announced March 31, 2026; Multi-Building Campus on ~100 Acres; One of Europe's Largest AI Factories)", "mw": 310.0, "mw_unit": "MW Planned Full Campus Capacity (Construction Commenced March 2026; Initial Customer Capacity Expected in 2027)", "pue": "1.08\u20131.12 (Closed-Loop Liquid Cooling + Lappeenranta District Heating Recovery)", "power_utility": "Fingrid National Transmission Grid (Low-Carbon Nordic Hydro/Nuclear/Wind Mix)", "cooling_water": "Closed-loop liquid cooling designed for waste-heat recovery into Lappeenranta's municipal district-heating network", "hardware": "NVIDIA Vera Rubin NVL72 & GB300 NVL72 Systems (2027+ Phased Ramp)", "docket_gate": "Announced March 31, 2026 (Q1 2026 Shareholder Letter p. 6); active site work underway for 2027 initial customer availability.", "conf": "[HIGH \u2014 Nebius Q1 2026 Form 6-K Ex. 99.2 pp. 2, 6 & March 31, 2026 Lappeenranta Release]", "obs_date": "2026-11-09", "notes": "Owned 310 MW AI factory in southeastern Finland announced March 31, 2026, anchoring Nebius's European sovereign AI and frontier training footprint."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [2.6394, 50.5312]}, "properties": {"id": 12, "name": "B\u00e9thune / Hauts-de-France AI Campus (Azur Datacenter / Former Bridgestone Site) \u2014 B\u00e9thune, France", "city": "B\u00e9thune (Near Lille), Pas-de-Calais, Hauts-de-France, France", "region": "Europe \u2014 France (RTE High-Voltage Grid)", "lat": 50.5312, "lon": 2.6394, "status": "Under Construction", "category": "Brownfield Industrial-to-AI Redevelopment (Azur Datacenter / Circular Datacenter; 26,000 Sq Meter Former Bridgestone Tire Plant)", "mw": 240.0, "mw_unit": "MW Planned Full Deployment (Phased Ramp: Initial 27\u201360 MW -> 120 MW Target -> 240 MW Full Buildout in 2027\u20132028)", "pue": "1.12\u20131.16 (Closed-Loop Liquid Cooling)", "power_utility": "RTE France High-Voltage Transmission Grid (Low-Carbon French Nuclear Fleet)", "cooling_water": "Closed-loop liquid cooling inside redeveloped 26,000 m\u00b2 industrial halls", "hardware": "NVIDIA GB300 NVL72 & Vera Rubin NVL72 Systems", "docket_gate": "Pas-de-Calais Prefecture public participation dossier (SIG Reverse Industry at B\u00e9thune, Aug. 2026); Nord France Invest & B\u00e9thune-Bruay redevelopment approvals.", "conf": "[HIGH \u2014 Nebius FY25 20-F p. 35 & March 31, 2026 Release; MEDIUM \u2014 Nord France Invest & Pas-de-Calais Prefecture Dossier]", "obs_date": "2026-11-09", "notes": "Redevelopment of the former Bridgestone factory in northern France into an up-to-240 MW AI campus."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [2.3578, 48.9189]}, "properties": {"id": 13, "name": "Paris Saint-Denis Colocation Hub (Equinix PA10 \u2014 Region eu-west1) \u2014 Paris, France", "city": "Saint-Denis (Paris Metro), \u00cele-de-France, France", "region": "Europe \u2014 France (RTE / Enedis)", "lat": 48.9189, "lon": 2.3578, "status": "Operational", "category": "Leased Colocation Hub (Equinix PA10; Signed July 2024, Launched Nov. 2024; Public Region `eu-west1`)", "mw": 15.0, "mw_unit": "MW Estimated Tenant Allocation inside Equinix PA10 (Operational Public Region `eu-west1`)", "pue": "1.15\u20131.20 (Liquid/Air Cooling + Rooftop Urban Farm Heat Recovery)", "power_utility": "RTE / Enedis (100% Renewable/Nuclear Energy Coverage)", "cooling_water": "Closed-loop cooling with waste heat recovered to warm Equinix PA10's rooftop urban greenhouse", "hardware": "NVIDIA H200 NVLink & AMD EPYC Genoa (Region `eu-west1`)", "docket_gate": "Operational since Q4 2024.", "conf": "[HIGH \u2014 Nebius FY25 20-F p. 35, Sept. 25, 2024 Launch Release & Region Docs `eu-west1`; LOW \u2014 MW Estimate]", "obs_date": "2026-11-09", "notes": "Nebius's first colocation facility in Europe (Equinix PA10, Saint-Denis), live since late 2024."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [2.3522, 48.8566]}, "properties": {"id": 14, "name": "France Second Cloud Region (Public Region eu-west2) \u2014 \u00cele-de-France, France", "city": "Paris Region, France", "region": "Europe \u2014 France (RTE)", "lat": 48.8566, "lon": 2.3522, "status": "Operational", "category": "Leased Colocation Hub (Secured Feb. 2026; Live as Public Region `eu-west2` Serving NVIDIA B300 NVLink)", "mw": 20.0, "mw_unit": "MW Estimated Tenant Allocation (Live in Nebius Region Docs as `eu-west2` w/ NVIDIA B300 NVLink)", "pue": "1.15\u20131.20 (Direct-to-Chip Liquid Cooling)", "power_utility": "RTE France Grid", "cooling_water": "Direct-to-chip liquid cooling for Blackwell Ultra racks", "hardware": "NVIDIA B300 NVLink (Blackwell Ultra) & AMD EPYC Genoa (Region `eu-west2`)", "docket_gate": "Secured Feb. 2026 (FY25 20-F p. 35) and live in Nebius documentation as `eu-west2`.", "conf": "[HIGH \u2014 Nebius FY25 20-F p. 35 & Official Region Docs `eu-west2`; LOW \u2014 MW Estimate]", "obs_date": "2026-11-09", "notes": "Second live French cloud region (`eu-west2`), hosting NVIDIA B300 NVLink clusters, Managed Kubernetes, Soperator, PostgreSQL, and MLflow."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-22.5611, 63.985]}, "properties": {"id": 15, "name": "Keflavik Nordic Colocation Hub (Verne Global \u2014 Private Region eu-north2) \u2014 Keflavik, Iceland", "city": "Reykjanesb\u00e6r (Keflav\u00edk), Southern Peninsula, Iceland", "region": "Europe \u2014 Nordics (Landsvirkjun / HS Orka 100% Hydro & Geothermal)", "lat": 63.985, "lon": -22.5611, "status": "Operational", "category": "Leased Colocation Hub (Verne Global Campus; Signed Dec. 2024, Launched Q1 2025; Private Region `eu-north2`)", "mw": 15.0, "mw_unit": "MW Estimated Tenant Allocation inside Verne's 140+ MW Campus (Operational Private Region `eu-north2`)", "pue": "1.10\u20131.15 (Year-Round Arctic Free Air + Liquid Cooling)", "power_utility": "100% Renewable Icelandic Hydroelectric & Geothermal Grid (Landsvirkjun / HS Orka)", "cooling_water": "Year-round sub-arctic ambient free air cooling + direct liquid cooling", "hardware": "NVIDIA H200 NVLink Cluster (Thousands of GPUs; Region `eu-north2`)", "docket_gate": "Operational since early 2025.", "conf": "[HIGH \u2014 Nebius FY25 20-F p. 35 & Official Region Docs `eu-north2`; LOW \u2014 MW Estimate]", "obs_date": "2026-11-09", "notes": "Hosted at Verne Global in Keflavik (`eu-north2`), powered by 100% hydroelectric and geothermal energy."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-0.5842, 51.3814]}, "properties": {"id": 16, "name": "Longcross Park UK Hub (Ark Data Centres \u2014 Public Regions uk-south1 / uk-south2) \u2014 Surrey, UK", "city": "Longcross (Chertsey), Surrey, United Kingdom (West of London)", "region": "Europe \u2014 United Kingdom (National Grid)", "lat": 51.3814, "lon": -0.5842, "status": "Operational", "category": "Leased Colocation Hub (Ark Data Centres Longcross Park; Signed June 2025, Launched Nov. 2025; Anchor of 4-Site, 65 MW / \u00a31.7B UK Program)", "mw": 16.0, "mw_unit": "MW Reported Initial Deployment (Part of 65 MW 4-Site UK Program; Initial 4,000+ NVIDIA B300 Blackwell Ultra GPUs Live Nov. 2025)", "pue": "1.12\u20131.18 (Modular Steel Halls w/ Direct-to-Chip Liquid + Air Cooling)", "power_utility": "UK National Grid", "cooling_water": "Closed-loop liquid cooling and air cooling", "hardware": "NVIDIA HGX B300 NVLink (Blackwell Ultra) & RTX PRO 6000 (Regions `uk-south1` & `uk-south2`)", "docket_gate": "Operational since November 2025; serves UK life-sciences and fintech customers including Basecamp Research, Prima Mente, and Revolut.", "conf": "[HIGH \u2014 Nebius FY25 20-F p. 35, Q3/Q4 2025 6-Ks & Ark June 26, 2025 Release; MEDIUM \u2014 DCD 16 MW Report]", "obs_date": "2026-11-09", "notes": "Nebius's first UK deployment (Ark Data Centres Longcross Park), live since November 2025 with NVIDIA B300 Blackwell Ultra systems."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0.1023, 51.7729]}, "properties": {"id": 17, "name": "Harlow UK AI Deployment (Kao Data KLON-02 & KLON-03) \u2014 Harlow, UK", "city": "Harlow, Essex, United Kingdom (London\u2013Cambridge Research Corridor)", "region": "Europe \u2014 United Kingdom (National Grid)", "lat": 51.7729, "lon": 0.1023, "status": "Under Construction", "category": "Leased Colocation Campus (Kao Data 10-Yr, 22 MW Agreement Announced June 8, 2026; Part of 65 MW / \u00a31.7B UK Program)", "mw": 22.0, "mw_unit": "MW Contracted IT Capacity (10-Yr Lease Across KLON-02 [~4.4 MW Existing] & KLON-03 [17.6 MW New Liquid-Cooled Hall Online Early 2027])", "pue": "1.12\u20131.15 (Direct-to-Chip Liquid Cooling; 100% Renewable Power)", "power_utility": "UK National Grid (100% Renewable Energy Powered + HVO Backup Generators)", "cooling_water": "High-density direct-to-chip liquid cooling in KLON-03", "hardware": "NVIDIA Blackwell Ultra & Vera Rubin Systems (Hosting Nebius AI Cloud & Token Factory)", "docket_gate": "10-year, 22 MW agreement announced June 8, 2026 by Kao Data & Infratil; KLON-03 scheduled online in early 2027.", "conf": "[HIGH \u2014 Kao Data June 8, 2026 Release & Infratil FY26 Report]", "obs_date": "2026-11-09", "notes": "22 MW, 10-year colocation agreement at Kao Data's Harlow campus (~34% of Nebius's 65 MW UK program)."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-3.0367, 51.5644]}, "properties": {"id": 18, "name": "Newport South Wales AI Growth Zone Hub (Vantage CWL1) \u2014 Newport, UK", "city": "Newport, South Wales, United Kingdom (Former Quinn Radiator / Imperial Park Campus)", "region": "Europe \u2014 United Kingdom (National Grid 400 kV)", "lat": 51.5644, "lon": -3.0367, "status": "Contracted / In Development", "category": "Leased Colocation Hub (Vantage Data Centers CWL1; Announced Aug. 13, 2026; Part of 65 MW UK Program)", "mw": 27.0, "mw_unit": "MW Estimated Program Balance (~27 MW Remaining Across UK 4-Site 65 MW Program After 16 MW Longcross & 22 MW Harlow)", "pue": "1.12\u20131.15 (Closed-Loop Liquid Cooling)", "power_utility": "National Grid 400 kV Connection at Vantage CWL1 Campus", "cooling_water": "Closed-loop liquid cooling", "hardware": "NVIDIA Blackwell Ultra / Vera Rubin GPU Clusters", "docket_gate": "Announced August 13, 2026 as the first deployment in the UK Government's South Wales AI Growth Zone.", "conf": "[HIGH \u2014 Vantage & Nebius Aug. 13, 2026 Release; LOW \u2014 MW Program Balance]", "obs_date": "2026-11-09", "notes": "Strategic deployment at Vantage Data Centers' CWL1 campus in South Wales, announced August 13, 2026."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-3.7327, 40.3083]}, "properties": {"id": 19, "name": "Madrid-Getafe Colocation Hub (MERLIN Edged \u2014 Public Region eu-south1) \u2014 Madrid, Spain", "city": "Getafe (Madrid Metro), Community of Madrid, Spain", "region": "Europe \u2014 Iberia (Red El\u00e9ctrica)", "lat": 40.3083, "lon": -3.7327, "status": "Operational", "category": "Leased Colocation Hub (MERLIN Edged Madrid-Getafe; Announced Q1/Q2 2026; Live as Public Region `eu-south1`)", "mw": 18.0, "mw_unit": "MW Contracted Lease Capacity at MERLIN Edged Madrid-Getafe (Live in Nebius Region Docs as `eu-south1`)", "pue": "1.15 (Edged Waterless Zero-Water Cooling)", "power_utility": "Red El\u00e9ctrica / Iberdrola Spanish Grid", "cooling_water": "Edged waterless closed-loop cooling technology (0.0 WUE)", "hardware": "NVIDIA RTX PRO 6000 Blackwell Server Edition & AMD EPYC Genoa (Region `eu-south1`)", "docket_gate": "18 MW lease confirmed by Edged Energy; live in Nebius region documentation as `eu-south1` (Madrid, Spain).", "conf": "[HIGH \u2014 Nebius Q1/Q2 2026 6-Ks, Official Region Docs `eu-south1` & Edged Energy 18 MW Disclosure]", "obs_date": "2026-11-09", "notes": "18 MW waterless colocation deployment at MERLIN Edged Madrid-Getafe, live as public cloud region `eu-south1`."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [24.5361, 59.3822]}, "properties": {"id": 20, "name": "Tallinn / H\u00fc\u00fcru Baltic AI Hub (Greenergy / Tensor Estate) \u2014 Tallinn, Estonia", "city": "H\u00fc\u00fcru (Tallinn West), Harju County, Estonia", "region": "Europe \u2014 Baltics (Elering Grid)", "lat": 59.3822, "lon": 24.5361, "status": "Under Construction", "category": "Leased Colocation Hub (Greenergy Data Centers / Tensor Estate; Announced Aug. 2026 in Q2 Shareholder Letter)", "mw": 22.0, "mw_unit": "MW Contracted Deployment (Targeted for Late 2026 / 2027 Activation)", "pue": "1.12\u20131.15 (Cold-Climate Closed-Loop Cooling)", "power_utility": "Elering Estonian High-Voltage Grid (Synchronized w/ Continental Europe Grid)", "cooling_water": "Cold-climate free-air and liquid cooling", "hardware": "NVIDIA Blackwell Ultra / Vera Rubin GPU Clusters", "docket_gate": "Announced August 12\u201313, 2026 (Q2 2026 Shareholder Letter p. 5 & Tensor Estate/Greenergy 22 MW disclosure).", "conf": "[HIGH \u2014 Nebius Q2 2026 Shareholder Letter p. 5 & Tensor Estate 22 MW Disclosure]", "obs_date": "2026-11-09", "notes": "22 MW deployment at Greenergy / Tensor Estate outside Tallinn, Estonia, expanding Nebius's Nordic/Baltic footprint."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [35.0104, 31.8903]}, "properties": {"id": 21, "name": "Modi'in AI Supercluster (Mega DC MDCIL-1 \u2014 Public Region me-west1) \u2014 Modi'in, Israel", "city": "Modi'in-Maccabim-Re'ut, Central District, Israel", "region": "Middle East \u2014 Israel (IEC National Grid)", "lat": 31.8903, "lon": 35.0104, "status": "Operational", "category": "Leased Colocation Hub (Mega Or / Mega DC MDCIL-1; Launched Oct. 2025; Public Region `me-west1`)", "mw": 10.0, "mw_unit": "MW Estimated Tenant Allocation inside 20 MW MDCIL-1 Campus (4,000 NVIDIA HGX B200 GPUs Live Oct. 2025; Mega Or Lists 9 MW IT Expansion)", "pue": "1.18\u20131.25 (Direct-to-Chip Liquid Cooling)", "power_utility": "Israel Electric Corporation (IEC)", "cooling_water": "Closed-loop liquid cooling for HGX B200 NVLink clusters", "hardware": "4,000 NVIDIA HGX B200 NVLink GPUs w/ Quantum InfiniBand (Region `me-west1`)", "docket_gate": "Operational since October 2025 (FY25 Form 20-F p. 35).", "conf": "[HIGH \u2014 Nebius FY25 20-F p. 35, Oct. 20, 2025 Launch Release, Region Docs `me-west1` & Mega Or Q2'26 Report]", "obs_date": "2026-11-09", "notes": "Nebius's first Israeli AI cloud region (`me-west1`), launched October 2025 with 4,000 NVIDIA HGX B200 GPUs."}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [34.9881, 31.747]}, "properties": {"id": 22, "name": "Beit Shemesh & Masmiyya Israeli Expansion (Mega Or / Mega DC 80 MW IT Package) \u2014 Beit Shemesh & Masmiyya, Israel", "city": "Beit Shemesh (58 MW IT) & Masmiyya / Bnei Re'em (22 MW IT), Israel", "region": "Middle East \u2014 Israel (IEC High-Voltage Grid)", "lat": 31.747, "lon": 34.9881, "status": "Under Construction", "category": "Leased Colocation Expansion (Two Sites Secured Feb. 2026 per FY25 20-F p. 35; Mega Or 80 MW IT Package: 58 MW Beit Shemesh + 22 MW Masmiyya)", "mw": 80.0, "mw_unit": "MW IT Total Contracted Across Two Sites (58 MW IT at Beit Shemesh + 22 MW IT at Masmiyya MDCIL-2; Phased Delivery Q3 2026\u20132027)", "pue": "1.15\u20131.22 (High-Density Direct Liquid Cooling)", "power_utility": "Israel Electric Corporation (IEC) & Co-Located Private Gas IPP Substations", "cooling_water": "High-density closed-loop liquid cooling", "hardware": "NVIDIA GB300 NVL72 & Vera Rubin Systems", "docket_gate": "FY25 Form 20-F (p. 35) confirms Nebius secured two new Israeli colocation sites in Feb. 2026; Mega Or FY25 & Q2 2026 reports and Globes (Jan. 6, 2026) detail 58 MW IT at Beit Shemesh and 22 MW IT at Masmiyya (80 MW IT total).", "conf": "[HIGH \u2014 Nebius FY25 20-F p. 35 & Mega Or FY25/Q2'26 Reports; MEDIUM \u2014 Globes Jan. 6, 2026 Confirmation]", "obs_date": "2026-11-09", "notes": "Two-site Israeli expansion (58 MW IT at Beit Shemesh + 22 MW IT at Masmiyya = 80 MW IT total) secured with Mega Or / Mega DC in early 2026."}}]};
+
+const darkBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+  attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ', maxZoom: 18
+});
+const darkRef = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+  maxZoom: 18
+});
+const darkGroup = L.layerGroup([darkBase, darkRef]);
+
+const streetLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+  attribution: 'Tiles &copy; Esri', maxZoom: 19
+});
+const topoLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+  attribution: 'Tiles &copy; Esri', maxZoom: 19
+});
+const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  attribution: 'Tiles &copy; Esri', maxZoom: 19
+});
+
+const map = L.map('map', {
+  center: [44.0, -25.0],
+  zoom: 3,
+  layers: [darkGroup]
+});
+
+L.control.layers({
+  "Dark Gray (Esri)": darkGroup,
+  "Street Map (Esri)": streetLayer,
+  "Topographic (Esri)": topoLayer,
+  "Satellite Imagery (Esri)": satLayer
+}).addTo(map);
+
+function statusColor(st) {
+  if (st === 'Operational') return '#22c55e';
+  if (st === 'Under Construction') return '#f59e0b';
+  return '#a855f7';
+}
+
+function radiusForMW(mw) {
+  return Math.max(7, Math.min(26, 5 + Math.sqrt(mw || 10) * 0.62));
+}
+
+let currentFilter = 'ALL';
+const markersById = {};
+const markerLayer = L.layerGroup().addTo(map);
+
+function buildPopup(p) {
+  return `
+    <div class="pop-title">${p.id}. ${p.name}</div>
+    <div class="pop-row"><strong>Status:</strong> ${p.status} &nbsp;|&nbsp; <strong>Category:</strong> ${p.category}</div>
+    <div class="pop-row"><strong>Location:</strong> ${p.city} (${p.region})</div>
+    <div class="pop-row"><strong>Capacity Envelope:</strong> ${p.mw.toLocaleString()} MW — ${p.mw_unit}</div>
+    <div class="pop-row"><strong>PUE &amp; Cooling:</strong> ${p.pue} — ${p.cooling_water}</div>
+    <div class="pop-row"><strong>Power &amp; Utility:</strong> ${p.power_utility}</div>
+    <div class="pop-row"><strong>Hardware &amp; Tenant Role:</strong> ${p.hardware}</div>
+    <div class="pop-row"><strong>Permitting &amp; Regulatory Gate:</strong> ${p.docket_gate}</div>
+    <div class="pop-row"><strong>Provenance (${p.obs_date}):</strong> ${p.conf}</div>
+    <div class="pop-row"><strong>Notes:</strong> ${p.notes}</div>
+  `;
+}
+
+function matchesFilter(p, q) {
+  if (currentFilter === 'Operational' && p.status !== 'Operational') return false;
+  if (currentFilter === 'Under Construction' && p.status !== 'Under Construction') return false;
+  if (currentFilter === 'Contracted' && !p.status.startsWith('Contracted')) return false;
+  if (currentFilter === 'US' && !p.region.startsWith('US')) return false;
+  if (currentFilter === 'INTL' && p.region.startsWith('US')) return false;
+  if (q) {
+    const hay = (p.name + ' ' + p.city + ' ' + p.region + ' ' + p.category + ' ' + p.power_utility + ' ' + p.hardware + ' ' + p.docket_gate + ' ' + p.notes).toLowerCase();
+    if (!hay.includes(q)) return false;
+  }
+  return true;
+}
+
+function renderList() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const listEl = document.getElementById('site-list');
+  listEl.innerHTML = '';
+  markerLayer.clearLayers();
+  const bounds = [];
+
+  GEOJSON_DATA.features.forEach(feat => {
+    const p = feat.properties;
+    if (!matchesFilter(p, q)) return;
+
+    const col = statusColor(p.status);
+    const marker = L.circleMarker([p.lat, p.lon], {
+      radius: radiusForMW(p.mw),
+      fillColor: col,
+      color: '#ffffff',
+      weight: 1.5,
+      opacity: 0.95,
+      fillOpacity: 0.82
+    }).bindPopup(buildPopup(p), { maxWidth: 430 });
+
+    marker.addTo(markerLayer);
+    markersById[p.id] = marker;
+    bounds.push([p.lat, p.lon]);
+
+    const stKey = p.status.split(' ')[0];
+    const card = document.createElement('div');
+    card.className = `site-card status-${stKey}`;
+    card.innerHTML = `
+      <div class="sc-top">
+        <div class="sc-name">${p.id}. ${p.name}</div>
+        <div class="sc-mw">${p.mw.toLocaleString()} MW</div>
+      </div>
+      <div class="sc-meta">${p.city} · ${p.region}</div>
+      <span class="sc-badge badge-${stKey}">${p.status}</span>
+    `;
+    card.onclick = () => {
+      map.setView([p.lat, p.lon], 10, { animate: true });
+      marker.openPopup();
+    };
+    listEl.appendChild(card);
+  });
+
+  if (bounds.length > 0) {
+    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 8 });
+  }
+}
+
+function filterSites(flt, btn) {
+  currentFilter = flt;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+const legend = L.control({ position: 'bottomright' });
+legend.onAdd = function() {
+  const div = L.DomUtil.create('div', 'legend');
+  div.innerHTML = `
+    <div style="font-weight:700;color:#facc15;margin-bottom:4px;">Nebius Site Status (Circle = MW Scale)</div>
+    <div><span class="legend-dot" style="background:#22c55e;"></span>Operational Cloud Region / AI Factory (10)</div>
+    <div><span class="legend-dot" style="background:#f59e0b;"></span>Under Construction / Active Ramp (10)</div>
+    <div><span class="legend-dot" style="background:#a855f7;"></span>Contracted / In Development (2)</div>
+  `;
+  return div;
+};
+legend.addTo(map);
+
+renderList();
+</script>
+</body>
+</html>
